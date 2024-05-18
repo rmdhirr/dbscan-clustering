@@ -16,6 +16,9 @@ def detect_delimiter(uploaded_file):
 def preprocess_data(df):
     st.write("Initial DataFrame:")
     st.write(df)
+
+    # Ensure unique column names by appending suffixes to duplicates
+    df.columns = pd.io.parsers.ParserBase({'names': df.columns})._maybe_dedup_names(df.columns)
     
     # Identify non-numeric columns
     non_numeric_df = df.select_dtypes(exclude=[np.number])
