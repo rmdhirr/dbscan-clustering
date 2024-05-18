@@ -21,6 +21,13 @@ def preprocess_data(df):
     numeric_df = df.select_dtypes(include=[np.number])
     non_numeric_df = df.select_dtypes(exclude=[np.number])
 
+    # Convert columns to numeric if possible
+    for col in df.columns:
+        df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', '.'), errors='coerce')
+
+    # Select only numeric columns after conversion
+    numeric_df = df.select_dtypes(include=[np.number])
+    
     st.write("Numeric DataFrame:")
     st.write(numeric_df)
     
