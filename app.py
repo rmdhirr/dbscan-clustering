@@ -7,8 +7,12 @@ import plotly.express as px
 
 # Function to preprocess the data
 def preprocess_data(df):
-    # Select only numeric columns
+    # Ensure all columns are numeric
     numeric_df = df.select_dtypes(include=[np.number])
+    
+    # Debug statement to check numeric columns
+    st.write("Numeric columns in the dataset:")
+    st.write(numeric_df.columns)
     
     # Check for missing values and fill them with median
     numeric_df = numeric_df.apply(lambda x: x.fillna(x.median()), axis=0)
@@ -32,7 +36,7 @@ def dbscan_clustering(data, eps, min_samples):
     return data, labels
 
 # Streamlit app
-st.title("DBSCAN Clustering App")
+st.title("🗺️ TBC DBSCAN Clustering App")
 
 # Sidebar menu
 st.sidebar.title("Menu")
@@ -53,11 +57,14 @@ if option == "Preprocess Data":
         st.sidebar.warning("Please upload a CSV file first.")
     else:
         df = st.session_state['df']
-        df_transformed, columns = preprocess_data(df)
-        st.session_state['df_transformed'] = df_transformed
-        st.session_state['columns'] = columns
-        st.write("Preprocessed Data:")
-        st.write(pd.DataFrame(df_transformed, columns=columns))
+        try:
+            df_transformed, columns = preprocess_data(df)
+            st.session_state['df_transformed'] = df_transformed
+            st.session_state['columns'] = columns
+            st.write("Preprocessed Data:")
+            st.write(pd.DataFrame(df_transformed, columns=columns))
+        except Exception as e:
+            st.error(f"Error during preprocessing: {e}")
 
 # DBSCAN Clustering
 if option == "DBSCAN Clustering":
@@ -68,14 +75,17 @@ if option == "DBSCAN Clustering":
         columns = st.session_state['columns']
         eps = st.sidebar.slider("Select epsilon (eps):", 0.1, 5.0, 0.5)
         min_samples = st.sidebar.slider("Select minimum samples:", 1, 10, 5)
-        data_with_labels, labels = dbscan_clustering(df_transformed, eps, min_samples)
-        
-        result_df = pd.DataFrame(data_with_labels, columns=columns)
-        result_df['Cluster'] = labels
-        
-        st.write("DBSCAN Clustering Results:")
-        st.write(result_df)
-        
-        # Plotting
-        fig = px.scatter(result_df, x=result_df.columns[0], y=result_df.columns[1], color='Cluster', title="DBSCAN Clustering Results")
-        st.plotly_chart(fig)
+        try:
+            data_with_labels, labels = dbscan_clustering(df_transformed, eps, min_samples)
+            
+            result_df = pd.DataFrame(data_with_labels, columns=columns)
+            result_df['Cluster'] = labels
+            
+            st.write("DBSCAN Clustering Results:")
+            st.write(result_df)
+            
+            # Plotting
+            fig = px.scatter(result_df, x=result_df.columns[0], y=result_df.columns[1], color='Cluster', title="DBSCAN Clustering Results")
+            st.plotly_chart(fig)
+        except Exception as e:
+            st.error(f"Error during DBSCAN clustering: {e}")
