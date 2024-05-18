@@ -12,11 +12,25 @@ def detect_delimiter(uploaded_file):
     dialect = csv.Sniffer().sniff(file_text)
     return dialect.delimiter
 
+# Function to ensure unique column names
+def make_unique(column_names):
+    seen = {}
+    for i, col in enumerate(column_names):
+        if col not in seen:
+            seen[col] = 1
+        else:
+            seen[col] += 1
+            column_names[i] = f"{col}_{seen[col]}"
+    return column_names
+
 # Function to preprocess the data
 def preprocess_data(df):
     st.write("Initial DataFrame:")
     st.write(df)
 
+    # Ensure unique column names
+    df.columns = make_unique(df.columns.tolist())
+    
     # Separate numeric and non-numeric columns
     numeric_df = df.select_dtypes(include=[np.number])
     non_numeric_df = df.select_dtypes(exclude=[np.number])
