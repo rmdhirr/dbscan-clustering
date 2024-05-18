@@ -3,8 +3,12 @@ import pandas as pd
 import numpy as np
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import QuantileTransformer
+from sklearn.decomposition import PCA
 import plotly.express as px
-import csv
+import matplotlib.pyplot as plt
+import geopandas as gpd
+import contextily as ctx
+from shapely.geometry import Point
 
 # Function to detect the delimiter
 def detect_delimiter(uploaded_file):
@@ -120,7 +124,14 @@ if option == "DBSCAN Clustering":
         eps = st.sidebar.slider("Select epsilon (eps):", 0.1, 5.0, 0.5)
         min_samples = st.sidebar.slider("Select minimum samples:", 1, 10, 5)
         try:
-            data_with_labels, labels = dbscan_clustering(final_df[numeric_columns], eps, min_samples)
+            # Apply PCA to reduce dimensions to 2D for clustering
+            pca = PCA(n_components=2)
+            pca_result = pca.fit_transform(final_df[numeric_columns])
+            final_df['pca1'] = pca_result[:, 0]
+            final_df['pca2'] = pca_result[:, 1]
+            
+            # Perform DBSCAN clustering
+            data_with_labels, labels = dbscan_clustering(final_df[['pca1', 'pca2']], eps, min_samples)
             
             result_df = final_df.copy()
             result_df['Cluster'] = labels
@@ -128,10 +139,18 @@ if option == "DBSCAN Clustering":
             st.write("DBSCAN Clustering Results:")
             st.write(result_df)
             
-            # Plotting
+            # Plot PCA results
+            fig = px.scatter(result_df, x='pca1', y='pca2', color='Cluster', hover_data=result_df.columns, title="DBSCAN Clustering Results (PCA Reduced)")
+            st.plotly_chart(fig)
+
+            # Plot geographical distribution
             if 'longitude' in result_df.columns and 'latitude' in result_df.columns:
-                fig = px.scatter(result_df, x='longitude', y='latitude', color='Cluster', hover_data=result_df.columns, title="DBSCAN Clustering Results")
-                st.plotly_chart(fig)
+                gdf = gpd.GeoDataFrame(result_df, geometry=gpd.points_from_xy(result_df.longitude, result_df.latitude))
+                fig, ax = plt.subplots(figsize=(10, 10))
+                gdf.plot(column='Cluster', cmap='viridis', legend=True, ax=ax, alpha=0.6)
+                ctx.add_basemap(ax, crs=gdf.crs.to_string(), source=ctx.providers.Stamen.TonerLite)
+                plt.title("Geographical Distribution of Clusters")
+                st.pyplot(fig)
             else:
                 st.error("Longitude and Latitude columns are required for the map visualization.")
         except Exception as e:
