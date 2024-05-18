@@ -91,14 +91,21 @@ def dbscan_clustering(data, eps, min_samples):
     
     return data, labels
 
-# Streamlit app
-st.title("DBSCAN Clustering App")
+# Initialize session state
+if 'page' not in st.session_state:
+    st.session_state['page'] = 'Upload CSV'
 
-# Sidebar tabs
-tab = st.sidebar.radio("Navigation", ["Upload CSV", "Preprocess Data", "DBSCAN Clustering"])
+# Sidebar navigation buttons
+if st.sidebar.button('Upload CSV'):
+    st.session_state['page'] = 'Upload CSV'
+if st.sidebar.button('Preprocess Data'):
+    st.session_state['page'] = 'Preprocess Data'
+if st.sidebar.button('DBSCAN Clustering'):
+    st.session_state['page'] = 'DBSCAN Clustering'
 
 # Upload CSV
-if tab == "Upload CSV":
+if st.session_state['page'] == 'Upload CSV':
+    st.title("Upload CSV")
     uploaded_file = st.file_uploader("Upload your input CSV file", type=["csv"])
     if uploaded_file is not None:
         # Forcing delimiter to semicolon based on provided dataset example
@@ -108,11 +115,12 @@ if tab == "Upload CSV":
         st.write("Uploaded Data:")
         st.write(df)
     if st.button("Proceed to Preprocessing"):
-        st.session_state['tab'] = "Preprocess Data"
+        st.session_state['page'] = 'Preprocess Data'
         st.experimental_rerun()
 
 # Preprocess Data
-if tab == "Preprocess Data" or (st.session_state.get('tab') == "Preprocess Data"):
+if st.session_state['page'] == 'Preprocess Data':
+    st.title("Preprocess Data")
     if 'df' not in st.session_state:
         st.warning("Please upload a CSV file first.")
     else:
@@ -124,13 +132,14 @@ if tab == "Preprocess Data" or (st.session_state.get('tab') == "Preprocess Data"
             st.write("Preprocessed Data:")
             st.write(final_df)
             if st.button("Proceed to DBSCAN Clustering"):
-                st.session_state['tab'] = "DBSCAN Clustering"
+                st.session_state['page'] = 'DBSCAN Clustering'
                 st.experimental_rerun()
         except Exception as e:
             st.error(f"Error during preprocessing: {e}")
 
 # DBSCAN Clustering
-if tab == "DBSCAN Clustering" or (st.session_state.get('tab') == "DBSCAN Clustering"):
+if st.session_state['page'] == 'DBSCAN Clustering':
+    st.title("DBSCAN Clustering")
     if 'final_df' not in st.session_state:
         st.warning("Please preprocess the data first.")
     else:
@@ -191,4 +200,4 @@ if tab == "DBSCAN Clustering" or (st.session_state.get('tab') == "DBSCAN Cluster
                 ax.set_axis_off()
                 st.pyplot(fig)
         except Exception as e:
-            st.error(f"Error during DBSCAN clustering: {e}")
+            st.error(f"Error during DBSCAN clustering: {e}"
