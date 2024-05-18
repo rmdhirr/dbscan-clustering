@@ -23,6 +23,13 @@ def make_unique(column_names):
             result.append(f"{col}_{seen[col]}")
     return result
 
+# Function to clean latitude and longitude columns
+def clean_lat_lon(df):
+    if 'longitude' in df.columns and 'latitude' in df.columns:
+        df['longitude'] = df['longitude'].astype(str).str.replace('.0', '').str.replace(',', '.').astype(float)
+        df['latitude'] = df['latitude'].astype(str).str.replace('.0', '').str.replace(',', '.').astype(float)
+    return df
+
 # Function to preprocess the data
 def preprocess_data(df):
     st.write("Initial DataFrame:")
@@ -30,6 +37,9 @@ def preprocess_data(df):
 
     # Ensure unique column names
     df.columns = make_unique(df.columns.tolist())
+    
+    # Clean latitude and longitude columns
+    df = clean_lat_lon(df)
     
     # Separate numeric and non-numeric columns
     numeric_df = df.select_dtypes(include=[np.number])
