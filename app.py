@@ -10,12 +10,6 @@ import geopandas as gpd
 import contextily as ctx
 from shapely.geometry import Point
 
-# Function to detect the delimiter
-def detect_delimiter(uploaded_file):
-    file_text = uploaded_file.getvalue().decode('utf-8')
-    dialect = csv.Sniffer().sniff(file_text)
-    return dialect.delimiter
-
 # Function to ensure unique column names
 def make_unique(column_names):
     seen = {}
@@ -92,8 +86,8 @@ option = st.sidebar.selectbox("Choose an action:", ["Upload CSV", "Preprocess Da
 if option == "Upload CSV":
     uploaded_file = st.sidebar.file_uploader("Upload your input CSV file", type=["csv"])
     if uploaded_file is not None:
-        delimiter = detect_delimiter(uploaded_file)
-        df = pd.read_csv(uploaded_file, delimiter=delimiter)
+        # Forcing delimiter to semicolon based on provided dataset example
+        df = pd.read_csv(uploaded_file, delimiter=';')
         df.columns = make_unique(df.columns.tolist())  # Ensure unique column names after reading
         st.session_state['df'] = df
         st.write("Uploaded Data:")
