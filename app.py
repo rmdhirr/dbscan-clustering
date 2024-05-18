@@ -21,11 +21,12 @@ def preprocess_data(df):
     non_numeric_df = df.select_dtypes(exclude=[np.number])
     
     # Convert columns to numeric if possible
-    numeric_df = df.apply(pd.to_numeric, errors='ignore')
+    for col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
 
     # Select only numeric columns
-    numeric_columns = numeric_df.select_dtypes(include=[np.number]).columns
-    numeric_df = numeric_df[numeric_columns]
+    numeric_columns = df.select_dtypes(include=[np.number]).columns
+    numeric_df = df[numeric_columns]
     
     st.write("DataFrame after converting to numeric columns:")
     st.write(numeric_df)
@@ -54,7 +55,11 @@ def preprocess_data(df):
     transformer = QuantileTransformer(output_distribution='normal', random_state=42)
     df_transformed = transformer.fit_transform(numeric_df)
     
-    return df_transformed, numeric_columns, non_numeric_df
+    # Convert the transformed array back to a DataFrame and merge with non-numeric columns
+    df_transformed = pd.DataFrame(df_transformed, columns=numeric_columns)
+    final_df = pd.concat([df_transformed, non_numeric_df.reset_index(drop=True)], axis=1)
+    
+    return final_df, numeric_columns
 
 # Function to perform DBSCAN clustering
 def dbscan_clustering(data, eps, min_samples):
@@ -87,40 +92,35 @@ if option == "Preprocess Data":
     else:
         df = st.session_state['df']
         try:
-            df_transformed, numeric_columns, non_numeric_df = preprocess_data(df)
-            st.session_state['df_transformed'] = df_transformed
+            final_df, numeric_columns = preprocess_data(df)
+            st.session_state['final_df'] = final_df
             st.session_state['numeric_columns'] = numeric_columns
-            st.session_state['non_numeric_df'] = non_numeric_df
             st.write("Preprocessed Data:")
-            st.write(pd.DataFrame(df_transformed, columns=numeric_columns))
+            st.write(final_df)
         except Exception as e:
             st.error(f"Error during preprocessing: {e}")
 
 # DBSCAN Clustering
 if option == "DBSCAN Clustering":
-    if 'df_transformed' not in st.session_state:
+    if 'final_df' not in st.session_state:
         st.sidebar.warning("Please preprocess the data first.")
     else:
-        df_transformed = st.session_state['df_transformed']
+        final_df = st.session_state['final_df']
         numeric_columns = st.session_state['numeric_columns']
-        non_numeric_df = st.session_state['non_numeric_df']
         eps = st.sidebar.slider("Select epsilon (eps):", 0.1, 5.0, 0.5)
         min_samples = st.sidebar.slider("Select minimum samples:", 1, 10, 5)
         try:
-            data_with_labels, labels = dbscan_clustering(df_transformed, eps, min_samples)
+            data_with_labels, labels = dbscan_clustering(final_df[numeric_columns], eps, min_samples)
             
-            result_df = pd.DataFrame(data_with_labels, columns=numeric_columns)
+            result_df = final_df.copy()
             result_df['Cluster'] = labels
-            
-            # Merge non-numeric columns for visualization
-            result_df = pd.concat([result_df, non_numeric_df.reset_index(drop=True)], axis=1)
             
             st.write("DBSCAN Clustering Results:")
             st.write(result_df)
             
             # Plotting
             if 'longitude' in result_df.columns and 'latitude' in result_df.columns:
-                fig = px.scatter(result_df, x='longitude', y='latitude', color='Cluster', hover_data=non_numeric_df.columns, title="DBSCAN Clustering Results")
+                fig = px.scatter(result_df, x='longitude', y='latitude', color='Cluster', hover_data=result_df.columns, title="DBSCAN Clustering Results")
                 st.plotly_chart(fig)
             else:
                 st.error("Longitude and Latitude columns are required for the map visualization.")
