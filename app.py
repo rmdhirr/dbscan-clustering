@@ -107,9 +107,9 @@ if tab == "Upload CSV":
         st.session_state['df'] = df
         st.write("Uploaded Data:")
         st.write(df)
-        if st.button("Proceed to Preprocessing"):
-            st.session_state['tab'] = "Preprocess Data"
-            st.experimental_rerun()
+    if st.button("Proceed to Preprocessing"):
+        st.session_state['tab'] = "Preprocess Data"
+        st.experimental_rerun()
 
 # Preprocess Data
 if tab == "Preprocess Data" or (st.session_state.get('tab') == "Preprocess Data"):
@@ -186,7 +186,7 @@ if tab == "DBSCAN Clustering" or (st.session_state.get('tab') == "DBSCAN Cluster
                         ax.text(row.geometry.x, row.geometry.y, '*', fontsize=12, color='red')  # Mark points too close to others
                 
                 # Add the basemap
-                ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
+                ctx.add_basemap(ax, source=ctx.providers.CartoDB.Voyager)
                 ax.set_title('DBSCAN Clustering of PCA-Reduced Data with Regency Labels')
                 ax.set_axis_off()
                 st.pyplot(fig)
