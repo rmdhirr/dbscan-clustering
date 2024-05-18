@@ -11,7 +11,7 @@ def preprocess_data(df):
     numeric_df = df.select_dtypes(include=[np.number])
     
     # Check for missing values and fill them with median
-    numeric_df.fillna(numeric_df.median(), inplace=True)
+    numeric_df = numeric_df.apply(lambda x: x.fillna(x.median()), axis=0)
     
     # Handle outliers by capping them to the 99th percentile
     for column in numeric_df.columns:
