@@ -4,6 +4,13 @@ import numpy as np
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import QuantileTransformer
 import plotly.express as px
+import csv
+
+# Function to detect the delimiter
+def detect_delimiter(uploaded_file):
+    file_text = uploaded_file.getvalue().decode('utf-8')
+    dialect = csv.Sniffer().sniff(file_text)
+    return dialect.delimiter
 
 # Function to preprocess the data
 def preprocess_data(df):
@@ -67,7 +74,8 @@ option = st.sidebar.selectbox("Choose an action:", ["Upload CSV", "Preprocess Da
 if option == "Upload CSV":
     uploaded_file = st.sidebar.file_uploader("Upload your input CSV file", type=["csv"])
     if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file)
+        delimiter = detect_delimiter(uploaded_file)
+        df = pd.read_csv(uploaded_file, delimiter=delimiter)
         st.session_state['df'] = df
         st.write("Uploaded Data:")
         st.write(df)
