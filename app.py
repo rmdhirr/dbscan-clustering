@@ -17,24 +17,14 @@ def preprocess_data(df):
     st.write("Initial DataFrame:")
     st.write(df)
 
-    # Ensure unique column names by appending suffixes to duplicates
-    df.columns = pd.io.parsers.ParserBase({'names': df.columns})._maybe_dedup_names(df.columns)
-    
-    # Identify non-numeric columns
+    # Separate numeric and non-numeric columns
+    numeric_df = df.select_dtypes(include=[np.number])
     non_numeric_df = df.select_dtypes(exclude=[np.number])
-    
-    # Convert columns to numeric if possible
-    for col in df.columns:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
 
-    # Select only numeric columns
-    numeric_columns = df.select_dtypes(include=[np.number]).columns
-    numeric_df = df[numeric_columns]
-    
-    st.write("DataFrame after converting to numeric columns:")
+    st.write("Numeric DataFrame:")
     st.write(numeric_df)
     
-    st.write("Non-numeric columns detected:")
+    st.write("Non-numeric DataFrame:")
     st.write(non_numeric_df)
     
     if numeric_df.empty:
@@ -43,7 +33,7 @@ def preprocess_data(df):
     # Check for missing values and fill them with median
     numeric_df = numeric_df.apply(lambda x: x.fillna(x.median()), axis=0)
     
-    st.write("DataFrame after filling missing values:")
+    st.write("Numeric DataFrame after filling missing values:")
     st.write(numeric_df)
     
     # Handle outliers by capping them to the 99th percentile
@@ -51,18 +41,18 @@ def preprocess_data(df):
         upper_limit = numeric_df[column].quantile(0.99)
         numeric_df[column] = np.where(numeric_df[column] > upper_limit, upper_limit, numeric_df[column])
     
-    st.write("DataFrame after handling outliers:")
+    st.write("Numeric DataFrame after handling outliers:")
     st.write(numeric_df)
     
     # Apply quantile transformation
     transformer = QuantileTransformer(output_distribution='normal', random_state=42)
     df_transformed = transformer.fit_transform(numeric_df)
+    df_transformed = pd.DataFrame(df_transformed, columns=numeric_df.columns)
     
-    # Convert the transformed array back to a DataFrame and merge with non-numeric columns
-    df_transformed = pd.DataFrame(df_transformed, columns=numeric_columns)
+    # Merge the transformed numeric data with non-numeric data
     final_df = pd.concat([df_transformed, non_numeric_df.reset_index(drop=True)], axis=1)
     
-    return final_df, numeric_columns
+    return final_df, numeric_df.columns
 
 # Function to perform DBSCAN clustering
 def dbscan_clustering(data, eps, min_samples):
