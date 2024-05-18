@@ -10,6 +10,10 @@ def preprocess_data(df):
     st.write("Initial DataFrame:")
     st.write(df)
     
+    # Convert columns to numeric if possible
+    for col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    
     # Ensure all columns are numeric
     numeric_df = df.select_dtypes(include=[np.number])
     
