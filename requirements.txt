@@ -6,3 +6,4 @@ plotly
 matplotlib
 geopandas
 contextily
+shapely
