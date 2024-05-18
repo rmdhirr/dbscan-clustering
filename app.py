@@ -200,4 +200,4 @@ if st.session_state['page'] == 'DBSCAN Clustering':
                 ax.set_axis_off()
                 st.pyplot(fig)
         except Exception as e:
-            st.error(f"Error during DBSCAN clustering: {e}"
+            st.error(f"Error during DBSCAN clustering: {e}")
