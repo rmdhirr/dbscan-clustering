@@ -54,7 +54,7 @@ def preprocess_data(df):
     transformer = QuantileTransformer(output_distribution='normal', random_state=42)
     df_transformed = transformer.fit_transform(numeric_df)
     
-    return df_transformed, numeric_df.columns, non_numeric_columns
+    return df_transformed, numeric_df.columns, df[non_numeric_columns]
 
 # Function to perform DBSCAN clustering
 def dbscan_clustering(data, eps, min_samples):
@@ -87,10 +87,10 @@ if option == "Preprocess Data":
     else:
         df = st.session_state['df']
         try:
-            df_transformed, columns, non_numeric_columns = preprocess_data(df)
+            df_transformed, columns, non_numeric_df = preprocess_data(df)
             st.session_state['df_transformed'] = df_transformed
             st.session_state['columns'] = columns
-            st.session_state['non_numeric_columns'] = non_numeric_columns
+            st.session_state['non_numeric_df'] = non_numeric_df
             st.write("Preprocessed Data:")
             st.write(pd.DataFrame(df_transformed, columns=columns))
         except Exception as e:
@@ -103,6 +103,7 @@ if option == "DBSCAN Clustering":
     else:
         df_transformed = st.session_state['df_transformed']
         columns = st.session_state['columns']
+        non_numeric_df = st.session_state['non_numeric_df']
         eps = st.sidebar.slider("Select epsilon (eps):", 0.1, 5.0, 0.5)
         min_samples = st.sidebar.slider("Select minimum samples:", 1, 10, 5)
         try:
@@ -111,11 +112,17 @@ if option == "DBSCAN Clustering":
             result_df = pd.DataFrame(data_with_labels, columns=columns)
             result_df['Cluster'] = labels
             
+            # Merge non-numeric columns for visualization
+            result_df = pd.concat([result_df, non_numeric_df.reset_index(drop=True)], axis=1)
+            
             st.write("DBSCAN Clustering Results:")
             st.write(result_df)
             
             # Plotting
-            fig = px.scatter(result_df, x=result_df.columns[0], y=result_df.columns[1], color='Cluster', title="DBSCAN Clustering Results")
-            st.plotly_chart(fig)
+            if 'longitude' in result_df.columns and 'latitude' in result_df.columns:
+                fig = px.scatter(result_df, x='longitude', y='latitude', color='Cluster', hover_data=non_numeric_df.columns, title="DBSCAN Clustering Results")
+                st.plotly_chart(fig)
+            else:
+                st.error("Longitude and Latitude columns are required for the map visualization.")
         except Exception as e:
             st.error(f"Error during DBSCAN clustering: {e}")
