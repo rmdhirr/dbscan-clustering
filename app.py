@@ -7,20 +7,31 @@ import plotly.express as px
 
 # Function to preprocess the data
 def preprocess_data(df):
+    st.write("Initial DataFrame:")
+    st.write(df)
+    
     # Ensure all columns are numeric
     numeric_df = df.select_dtypes(include=[np.number])
     
-    # Debug statement to check numeric columns
-    st.write("Numeric columns in the dataset:")
-    st.write(numeric_df.columns)
+    st.write("DataFrame after selecting numeric columns:")
+    st.write(numeric_df)
+    
+    if numeric_df.empty:
+        raise ValueError("No numeric columns found in the dataset.")
     
     # Check for missing values and fill them with median
     numeric_df = numeric_df.apply(lambda x: x.fillna(x.median()), axis=0)
+    
+    st.write("DataFrame after filling missing values:")
+    st.write(numeric_df)
     
     # Handle outliers by capping them to the 99th percentile
     for column in numeric_df.columns:
         upper_limit = numeric_df[column].quantile(0.99)
         numeric_df[column] = np.where(numeric_df[column] > upper_limit, upper_limit, numeric_df[column])
+    
+    st.write("DataFrame after handling outliers:")
+    st.write(numeric_df)
     
     # Apply quantile transformation
     transformer = QuantileTransformer(output_distribution='normal', random_state=42)
@@ -36,7 +47,7 @@ def dbscan_clustering(data, eps, min_samples):
     return data, labels
 
 # Streamlit app
-st.title("🗺️ TBC DBSCAN Clustering App")
+st.title("DBSCAN Clustering App")
 
 # Sidebar menu
 st.sidebar.title("Menu")
