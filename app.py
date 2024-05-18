@@ -94,13 +94,12 @@ def dbscan_clustering(data, eps, min_samples):
 # Streamlit app
 st.title("DBSCAN Clustering App")
 
-# Sidebar menu
-st.sidebar.title("Menu")
-option = st.sidebar.selectbox("Choose an action:", ["Upload CSV", "Preprocess Data", "DBSCAN Clustering"])
+# Sidebar tabs
+tab = st.sidebar.radio("Navigation", ["Upload CSV", "Preprocess Data", "DBSCAN Clustering"])
 
 # Upload CSV
-if option == "Upload CSV":
-    uploaded_file = st.sidebar.file_uploader("Upload your input CSV file", type=["csv"])
+if tab == "Upload CSV":
+    uploaded_file = st.file_uploader("Upload your input CSV file", type=["csv"])
     if uploaded_file is not None:
         # Forcing delimiter to semicolon based on provided dataset example
         df = pd.read_csv(uploaded_file, delimiter=';')
@@ -108,11 +107,14 @@ if option == "Upload CSV":
         st.session_state['df'] = df
         st.write("Uploaded Data:")
         st.write(df)
+        if st.button("Proceed to Preprocessing"):
+            st.session_state['tab'] = "Preprocess Data"
+            st.experimental_rerun()
 
 # Preprocess Data
-if option == "Preprocess Data":
+if tab == "Preprocess Data" or (st.session_state.get('tab') == "Preprocess Data"):
     if 'df' not in st.session_state:
-        st.sidebar.warning("Please upload a CSV file first.")
+        st.warning("Please upload a CSV file first.")
     else:
         df = st.session_state['df']
         try:
@@ -121,18 +123,21 @@ if option == "Preprocess Data":
             st.session_state['numeric_columns'] = numeric_columns
             st.write("Preprocessed Data:")
             st.write(final_df)
+            if st.button("Proceed to DBSCAN Clustering"):
+                st.session_state['tab'] = "DBSCAN Clustering"
+                st.experimental_rerun()
         except Exception as e:
             st.error(f"Error during preprocessing: {e}")
 
 # DBSCAN Clustering
-if option == "DBSCAN Clustering":
+if tab == "DBSCAN Clustering" or (st.session_state.get('tab') == "DBSCAN Clustering"):
     if 'final_df' not in st.session_state:
-        st.sidebar.warning("Please preprocess the data first.")
+        st.warning("Please preprocess the data first.")
     else:
         final_df = st.session_state['final_df']
         numeric_columns = st.session_state['numeric_columns']
-        eps = st.sidebar.slider("Select epsilon (eps):", 0.1, 5.0, 0.5)
-        min_samples = st.sidebar.slider("Select minimum samples:", 1, 10, 5)
+        eps = st.slider("Select epsilon (eps):", 0.1, 5.0, 0.5)
+        min_samples = st.slider("Select minimum samples:", 1, 10, 5)
         try:
             # Apply PCA to reduce dimensions to 2D for clustering
             pca = PCA(n_components=2)
@@ -164,8 +169,8 @@ if option == "DBSCAN Clustering":
                 gdf = gdf.to_crs(epsg=3857)  # Project to Web Mercator for visualization purposes
                 
                 # Plot using geopandas and add a basemap with contextily
-                fig, ax = plt.subplots(1, 1, figsize=(20, 12))  # Increased figure width for better layout
-                gdf.plot(ax=ax, markersize=5, column='cluster_labels', cmap='viridis', legend=True)
+                fig, ax = plt.subplots(1, 1, figsize=(20, 15))  # Increased figure size for better layout
+                gdf.plot(ax=ax, markersize=5, column='cluster_labels', cmap='tab20', legend=True)
                 
                 # Distance calculation for label placement
                 coords = np.column_stack((gdf.geometry.x, gdf.geometry.y))
@@ -185,7 +190,5 @@ if option == "DBSCAN Clustering":
                 ax.set_title('DBSCAN Clustering of PCA-Reduced Data with Regency Labels')
                 ax.set_axis_off()
                 st.pyplot(fig)
-            else:
-                st.error("Longitude and Latitude columns are required for the map visualization.")
         except Exception as e:
             st.error(f"Error during DBSCAN clustering: {e}")
