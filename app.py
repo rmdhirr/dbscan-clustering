@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import QuantileTransformer
 import plotly.express as px
@@ -41,23 +40,27 @@ if option == "Upload CSV":
     uploaded_file = st.sidebar.file_uploader("Upload your input CSV file", type=["csv"])
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file)
+        st.session_state['df'] = df
         st.write("Uploaded Data:")
         st.write(df)
 
 # Preprocess Data
 if option == "Preprocess Data":
-    if 'df' not in locals():
+    if 'df' not in st.session_state:
         st.sidebar.warning("Please upload a CSV file first.")
     else:
+        df = st.session_state['df']
         df_transformed = preprocess_data(df)
+        st.session_state['df_transformed'] = df_transformed
         st.write("Preprocessed Data:")
         st.write(pd.DataFrame(df_transformed, columns=df.columns))
 
 # DBSCAN Clustering
 if option == "DBSCAN Clustering":
-    if 'df_transformed' not in locals():
+    if 'df_transformed' not in st.session_state:
         st.sidebar.warning("Please preprocess the data first.")
     else:
+        df_transformed = st.session_state['df_transformed']
         eps = st.sidebar.slider("Select epsilon (eps):", 0.1, 5.0, 0.5)
         min_samples = st.sidebar.slider("Select minimum samples:", 1, 10, 5)
         data_with_labels, labels = dbscan_clustering(df_transformed, eps, min_samples)
