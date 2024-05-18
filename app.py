@@ -10,15 +10,21 @@ def preprocess_data(df):
     st.write("Initial DataFrame:")
     st.write(df)
     
-    # Convert columns to numeric if possible
+    # Convert columns to numeric if possible, and mark non-numeric columns
+    non_numeric_columns = []
     for col in df.columns:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
+        if df[col].dtype not in [np.float64, np.int64]:
+            non_numeric_columns.append(col)
+            df[col] = pd.to_numeric(df[col], errors='coerce')
     
     # Ensure all columns are numeric
     numeric_df = df.select_dtypes(include=[np.number])
     
     st.write("DataFrame after selecting numeric columns:")
     st.write(numeric_df)
+    
+    st.write("Non-numeric columns detected:")
+    st.write(non_numeric_columns)
     
     if numeric_df.empty:
         raise ValueError("No numeric columns found in the dataset.")
@@ -41,7 +47,7 @@ def preprocess_data(df):
     transformer = QuantileTransformer(output_distribution='normal', random_state=42)
     df_transformed = transformer.fit_transform(numeric_df)
     
-    return df_transformed, numeric_df.columns
+    return df_transformed, numeric_df.columns, non_numeric_columns
 
 # Function to perform DBSCAN clustering
 def dbscan_clustering(data, eps, min_samples):
@@ -73,9 +79,10 @@ if option == "Preprocess Data":
     else:
         df = st.session_state['df']
         try:
-            df_transformed, columns = preprocess_data(df)
+            df_transformed, columns, non_numeric_columns = preprocess_data(df)
             st.session_state['df_transformed'] = df_transformed
             st.session_state['columns'] = columns
+            st.session_state['non_numeric_columns'] = non_numeric_columns
             st.write("Preprocessed Data:")
             st.write(pd.DataFrame(df_transformed, columns=columns))
         except Exception as e:
