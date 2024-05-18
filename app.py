@@ -7,19 +7,22 @@ import plotly.express as px
 
 # Function to preprocess the data
 def preprocess_data(df):
+    # Select only numeric columns
+    numeric_df = df.select_dtypes(include=[np.number])
+    
     # Check for missing values and fill them with median
-    df.fillna(df.median(), inplace=True)
+    numeric_df.fillna(numeric_df.median(), inplace=True)
     
     # Handle outliers by capping them to the 99th percentile
-    for column in df.columns:
-        upper_limit = df[column].quantile(0.99)
-        df[column] = np.where(df[column] > upper_limit, upper_limit, df[column])
+    for column in numeric_df.columns:
+        upper_limit = numeric_df[column].quantile(0.99)
+        numeric_df[column] = np.where(numeric_df[column] > upper_limit, upper_limit, numeric_df[column])
     
     # Apply quantile transformation
     transformer = QuantileTransformer(output_distribution='normal', random_state=42)
-    df_transformed = transformer.fit_transform(df)
+    df_transformed = transformer.fit_transform(numeric_df)
     
-    return df_transformed
+    return df_transformed, numeric_df.columns
 
 # Function to perform DBSCAN clustering
 def dbscan_clustering(data, eps, min_samples):
@@ -50,10 +53,11 @@ if option == "Preprocess Data":
         st.sidebar.warning("Please upload a CSV file first.")
     else:
         df = st.session_state['df']
-        df_transformed = preprocess_data(df)
+        df_transformed, columns = preprocess_data(df)
         st.session_state['df_transformed'] = df_transformed
+        st.session_state['columns'] = columns
         st.write("Preprocessed Data:")
-        st.write(pd.DataFrame(df_transformed, columns=df.columns))
+        st.write(pd.DataFrame(df_transformed, columns=columns))
 
 # DBSCAN Clustering
 if option == "DBSCAN Clustering":
@@ -61,14 +65,17 @@ if option == "DBSCAN Clustering":
         st.sidebar.warning("Please preprocess the data first.")
     else:
         df_transformed = st.session_state['df_transformed']
+        columns = st.session_state['columns']
         eps = st.sidebar.slider("Select epsilon (eps):", 0.1, 5.0, 0.5)
         min_samples = st.sidebar.slider("Select minimum samples:", 1, 10, 5)
         data_with_labels, labels = dbscan_clustering(df_transformed, eps, min_samples)
         
+        result_df = pd.DataFrame(data_with_labels, columns=columns)
+        result_df['Cluster'] = labels
+        
         st.write("DBSCAN Clustering Results:")
-        st.write(pd.DataFrame(data_with_labels, columns=list(df.columns) + ['Cluster']))
+        st.write(result_df)
         
         # Plotting
-        fig = px.scatter(pd.DataFrame(data_with_labels, columns=list(df.columns) + ['Cluster']), 
-                         x=0, y=1, color='Cluster', title="DBSCAN Clustering Results")
+        fig = px.scatter(result_df, x=result_df.columns[0], y=result_df.columns[1], color='Cluster', title="DBSCAN Clustering Results")
         st.plotly_chart(fig)
