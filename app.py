@@ -42,14 +42,19 @@ def preprocess_data(df):
     df = clean_lat_lon(df)
     
     # Separate numeric and non-numeric columns
-    numeric_df = df.select_dtypes(include=[np.number])
+    lat_lon_columns = ['latitude', 'longitude']
+    numeric_df = df.drop(columns=lat_lon_columns, errors='ignore').select_dtypes(include=[np.number])
     non_numeric_df = df.select_dtypes(exclude=[np.number])
+    lat_lon_df = df[lat_lon_columns] if set(lat_lon_columns).issubset(df.columns) else pd.DataFrame()
 
     st.write("Numeric DataFrame:")
     st.write(numeric_df)
     
     st.write("Non-numeric DataFrame:")
     st.write(non_numeric_df)
+
+    st.write("Latitude and Longitude DataFrame:")
+    st.write(lat_lon_df)
     
     if numeric_df.empty:
         raise ValueError("No numeric columns found in the dataset.")
@@ -73,8 +78,8 @@ def preprocess_data(df):
     df_transformed = transformer.fit_transform(numeric_df)
     df_transformed = pd.DataFrame(df_transformed, columns=numeric_df.columns)
     
-    # Merge the transformed numeric data with non-numeric data
-    final_df = pd.concat([df_transformed, non_numeric_df.reset_index(drop=True)], axis=1)
+    # Merge the transformed numeric data with non-numeric data and lat/lon data
+    final_df = pd.concat([df_transformed, non_numeric_df.reset_index(drop=True), lat_lon_df.reset_index(drop=True)], axis=1)
     
     return final_df, numeric_df.columns
 
@@ -153,7 +158,7 @@ if option == "DBSCAN Clustering":
                 gdf.crs = "EPSG:4326"  # Set the coordinate reference system
                 fig, ax = plt.subplots(figsize=(10, 10))
                 gdf.plot(column='Cluster', cmap='viridis', legend=True, ax=ax, alpha=0.6)
-                ctx.add_basemap(ax, crs=gdf.crs.to_string(), source=ctx.providers.Stamen.TonerLite)
+                ctx.add_basemap(ax, crs=gdf.crs.to_string(), source=ctx.providers.Stamen.Terrain)
                 plt.title("Geographical Distribution of Clusters")
                 st.pyplot(fig)
             else:
