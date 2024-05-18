@@ -158,7 +158,7 @@ if option == "DBSCAN Clustering":
                 gdf.crs = "EPSG:4326"  # Set the coordinate reference system
                 fig, ax = plt.subplots(figsize=(10, 10))
                 gdf.plot(column='Cluster', cmap='viridis', legend=True, ax=ax, alpha=0.6)
-                ctx.add_basemap(ax, crs=gdf.crs.to_string(), source=ctx.providers.Stamen.Terrain)
+                ctx.add_basemap(ax, crs=gdf.crs, source=ctx.providers.Stamen.Terrain)
                 plt.title("Geographical Distribution of Clusters")
                 st.pyplot(fig)
             else:
