@@ -15,13 +15,15 @@ def detect_delimiter(uploaded_file):
 # Function to ensure unique column names
 def make_unique(column_names):
     seen = {}
-    for i, col in enumerate(column_names):
+    result = []
+    for col in column_names:
         if col not in seen:
             seen[col] = 1
+            result.append(col)
         else:
             seen[col] += 1
-            column_names[i] = f"{col}_{seen[col]}"
-    return column_names
+            result.append(f"{col}_{seen[col]}")
+    return result
 
 # Function to preprocess the data
 def preprocess_data(df):
@@ -35,13 +37,6 @@ def preprocess_data(df):
     numeric_df = df.select_dtypes(include=[np.number])
     non_numeric_df = df.select_dtypes(exclude=[np.number])
 
-    # Convert columns to numeric if possible
-    for col in df.columns:
-        df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', '.'), errors='coerce')
-
-    # Select only numeric columns after conversion
-    numeric_df = df.select_dtypes(include=[np.number])
-    
     st.write("Numeric DataFrame:")
     st.write(numeric_df)
     
