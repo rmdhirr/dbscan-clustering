@@ -150,6 +150,7 @@ if option == "DBSCAN Clustering":
             # Plot geographical distribution
             if 'longitude' in result_df.columns and 'latitude' in result_df.columns:
                 gdf = gpd.GeoDataFrame(result_df, geometry=gpd.points_from_xy(result_df.longitude, result_df.latitude))
+                gdf.crs = "EPSG:4326"  # Set the coordinate reference system
                 fig, ax = plt.subplots(figsize=(10, 10))
                 gdf.plot(column='Cluster', cmap='viridis', legend=True, ax=ax, alpha=0.6)
                 ctx.add_basemap(ax, crs=gdf.crs.to_string(), source=ctx.providers.Stamen.TonerLite)
