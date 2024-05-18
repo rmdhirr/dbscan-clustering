@@ -17,15 +17,15 @@ def preprocess_data(df):
     st.write("Initial DataFrame:")
     st.write(df)
     
-    # Keep a copy of the non-numeric columns
+    # Identify non-numeric columns
     non_numeric_df = df.select_dtypes(exclude=[np.number])
     
     # Convert columns to numeric if possible
-    for col in df.columns:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
-    
+    numeric_df = df.apply(pd.to_numeric, errors='ignore')
+
     # Select only numeric columns
-    numeric_df = df.select_dtypes(include=[np.number])
+    numeric_columns = numeric_df.select_dtypes(include=[np.number]).columns
+    numeric_df = numeric_df[numeric_columns]
     
     st.write("DataFrame after converting to numeric columns:")
     st.write(numeric_df)
@@ -54,7 +54,7 @@ def preprocess_data(df):
     transformer = QuantileTransformer(output_distribution='normal', random_state=42)
     df_transformed = transformer.fit_transform(numeric_df)
     
-    return df_transformed, numeric_df.columns, non_numeric_df
+    return df_transformed, numeric_columns, non_numeric_df
 
 # Function to perform DBSCAN clustering
 def dbscan_clustering(data, eps, min_samples):
@@ -87,12 +87,12 @@ if option == "Preprocess Data":
     else:
         df = st.session_state['df']
         try:
-            df_transformed, columns, non_numeric_df = preprocess_data(df)
+            df_transformed, numeric_columns, non_numeric_df = preprocess_data(df)
             st.session_state['df_transformed'] = df_transformed
-            st.session_state['columns'] = columns
+            st.session_state['numeric_columns'] = numeric_columns
             st.session_state['non_numeric_df'] = non_numeric_df
             st.write("Preprocessed Data:")
-            st.write(pd.DataFrame(df_transformed, columns=columns))
+            st.write(pd.DataFrame(df_transformed, columns=numeric_columns))
         except Exception as e:
             st.error(f"Error during preprocessing: {e}")
 
@@ -102,14 +102,14 @@ if option == "DBSCAN Clustering":
         st.sidebar.warning("Please preprocess the data first.")
     else:
         df_transformed = st.session_state['df_transformed']
-        columns = st.session_state['columns']
+        numeric_columns = st.session_state['numeric_columns']
         non_numeric_df = st.session_state['non_numeric_df']
         eps = st.sidebar.slider("Select epsilon (eps):", 0.1, 5.0, 0.5)
         min_samples = st.sidebar.slider("Select minimum samples:", 1, 10, 5)
         try:
             data_with_labels, labels = dbscan_clustering(df_transformed, eps, min_samples)
             
-            result_df = pd.DataFrame(data_with_labels, columns=columns)
+            result_df = pd.DataFrame(data_with_labels, columns=numeric_columns)
             result_df['Cluster'] = labels
             
             # Merge non-numeric columns for visualization
