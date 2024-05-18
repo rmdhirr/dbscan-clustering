@@ -95,6 +95,7 @@ if option == "Upload CSV":
     if uploaded_file is not None:
         delimiter = detect_delimiter(uploaded_file)
         df = pd.read_csv(uploaded_file, delimiter=delimiter)
+        df.columns = make_unique(df.columns.tolist())  # Ensure unique column names after reading
         st.session_state['df'] = df
         st.write("Uploaded Data:")
         st.write(df)
