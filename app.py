@@ -211,21 +211,6 @@ if st.session_state['page'] == 'DBSCAN Clustering':
                         ax.text(row.geometry.x, row.geometry.y, '*', fontsize=12, color='red')  # Mark points too close to others
                 
                 # Add the basemap
-                ctx.add_basemap(ax, source=ctx.providers.CartoDB.V
-                # Distance calculation for label placement
-                coords = np.column_stack((gdf.geometry.x, gdf.geometry.y))
-                distances = euclidean_distances(coords, coords)
-                min_dist = np.percentile(distances[distances > 0], 1)  # Lower percentile if too restrictive
-                
-                # Add regency names, relaxing the distance condition
-                for idx, row in gdf.iterrows():
-                    if distances[idx][distances[idx] > 0].min() > min_dist / 2:  # Reduce min_dist to be less restrictive
-                        ax.text(row.geometry.x, row.geometry.y, row['regency'], fontsize=8, ha='right', va='top', rotation=15)
-                    else:
-                        # Optionally add a marker or different text for skipped points
-                        ax.text(row.geometry.x, row.geometry.y, '*', fontsize=12, color='red')  # Mark points too close to others
-                
-                # Add the basemap
                 ctx.add_basemap(ax, source=ctx.providers.CartoDB.Voyager)
                 ax.set_title('DBSCAN Clustering of PCA-Reduced Data with Regency Labels')
                 ax.set_axis_off()
