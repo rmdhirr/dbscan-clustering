@@ -95,17 +95,33 @@ def dbscan_clustering(data, eps, min_samples):
 if 'page' not in st.session_state:
     st.session_state['page'] = 'Upload CSV'
 
-# Sidebar navigation buttons
-if st.sidebar.button('Upload CSV'):
+# Title for the app
+st.title("DBSCAN Clustering App")
+
+# Sidebar navigation buttons with equal size and centered text
+def sidebar_button(label):
+    st.sidebar.markdown(
+        f"""
+        <style>
+        div.stButton > button:first-child {{
+            width: 100%;
+            height: 50px;
+            text-align: center;
+        }}
+        </style>
+        """, unsafe_allow_html=True)
+    return st.sidebar.button(label)
+
+if sidebar_button('Upload CSV'):
     st.session_state['page'] = 'Upload CSV'
-if st.sidebar.button('Preprocess Data'):
+if sidebar_button('Preprocess Data'):
     st.session_state['page'] = 'Preprocess Data'
-if st.sidebar.button('DBSCAN Clustering'):
+if sidebar_button('DBSCAN Clustering'):
     st.session_state['page'] = 'DBSCAN Clustering'
 
 # Upload CSV
 if st.session_state['page'] == 'Upload CSV':
-    st.title("Upload CSV")
+    st.header("Upload CSV")
     uploaded_file = st.file_uploader("Upload your input CSV file", type=["csv"])
     if uploaded_file is not None:
         # Forcing delimiter to semicolon based on provided dataset example
@@ -120,7 +136,7 @@ if st.session_state['page'] == 'Upload CSV':
 
 # Preprocess Data
 if st.session_state['page'] == 'Preprocess Data':
-    st.title("Preprocess Data")
+    st.header("Preprocess Data")
     if 'df' not in st.session_state:
         st.warning("Please upload a CSV file first.")
     else:
@@ -139,7 +155,7 @@ if st.session_state['page'] == 'Preprocess Data':
 
 # DBSCAN Clustering
 if st.session_state['page'] == 'DBSCAN Clustering':
-    st.title("DBSCAN Clustering")
+    st.header("DBSCAN Clustering")
     if 'final_df' not in st.session_state:
         st.warning("Please preprocess the data first.")
     else:
@@ -181,6 +197,21 @@ if st.session_state['page'] == 'DBSCAN Clustering':
                 fig, ax = plt.subplots(1, 1, figsize=(20, 15))  # Increased figure size for better layout
                 gdf.plot(ax=ax, markersize=5, column='cluster_labels', cmap='tab20', legend=True)
                 
+                # Distance calculation for label placement
+                coords = np.column_stack((gdf.geometry.x, gdf.geometry.y))
+                distances = euclidean_distances(coords, coords)
+                min_dist = np.percentile(distances[distances > 0], 1)  # Lower percentile if too restrictive
+                
+                # Add regency names, relaxing the distance condition
+                for idx, row in gdf.iterrows():
+                    if distances[idx][distances[idx] > 0].min() > min_dist / 2:  # Reduce min_dist to be less restrictive
+                        ax.text(row.geometry.x, row.geometry.y, row['regency'], fontsize=8, ha='right', va='top', rotation=15)
+                    else:
+                        # Optionally add a marker or different text for skipped points
+                        ax.text(row.geometry.x, row.geometry.y, '*', fontsize=12, color='red')  # Mark points too close to others
+                
+                # Add the basemap
+                ctx.add_basemap(ax, source=ctx.providers.CartoDB.V
                 # Distance calculation for label placement
                 coords = np.column_stack((gdf.geometry.x, gdf.geometry.y))
                 distances = euclidean_distances(coords, coords)
