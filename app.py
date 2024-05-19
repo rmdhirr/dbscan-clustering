@@ -96,7 +96,7 @@ if 'page' not in st.session_state:
     st.session_state['page'] = 'Upload CSV'
 
 # Title for the app
-st.title("DBSCAN Clustering App")
+st.title("🗺️ DBSCAN Clustering App")
 
 # Sidebar navigation buttons with equal size and centered text
 def sidebar_button(label):
