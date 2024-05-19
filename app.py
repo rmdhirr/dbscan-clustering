@@ -194,7 +194,7 @@ if st.session_state['page'] == 'DBSCAN Clustering':
                 gdf = gdf.to_crs(epsg=3857)  # Project to Web Mercator for visualization purposes
                 
                 # Plot using geopandas and add a basemap with contextily
-                fig, ax = plt.subplots(1, 1, figsize=(20, 15))  # Increased figure size for better layout
+                fig, ax = plt.subplots(1, 1, figsize=(30, 20))  # Increased figure size for better layout
                 gdf.plot(ax=ax, markersize=5, column='cluster_labels', cmap='tab20', legend=True)
                 
                 # Distance calculation for label placement
