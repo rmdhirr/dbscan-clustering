@@ -88,6 +88,14 @@ def preprocess_data(df):
     # Merge the transformed numeric data with non-numeric data and lat/lon data
     final_df = pd.concat([df_transformed, non_numeric_df.reset_index(drop=True), lat_lon_df.reset_index(drop=True)], axis=1)
     
+    # Check for any remaining infinite values
+    if np.isinf(final_df).values.any():
+        raise ValueError("Data contains infinite values after preprocessing.")
+    
+    # Check for any remaining NaN values
+    if final_df.isna().values.any():
+        raise ValueError("Data contains NaN values after preprocessing.")
+    
     return final_df, numeric_df.columns
 
 # Function to perform DBSCAN clustering
