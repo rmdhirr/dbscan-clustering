@@ -66,6 +66,12 @@ def preprocess_data(df):
     st.write("Numeric DataFrame after filling missing values:")
     st.write(numeric_df)
     
+    # Handle infinite values
+    numeric_df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    
+    # Handle remaining NaN values
+    numeric_df = numeric_df.apply(lambda x: x.fillna(x.median()), axis=0)
+    
     # Handle outliers by capping them to the 99th percentile
     for column in numeric_df.columns:
         upper_limit = numeric_df[column].quantile(0.99)
@@ -96,7 +102,7 @@ if 'page' not in st.session_state:
     st.session_state['page'] = 'Upload CSV'
 
 # Title for the app
-st.title("🗺️ DBSCAN Clustering App")
+st.title("DBSCAN Clustering App")
 
 # Sidebar navigation buttons with equal size and centered text
 def sidebar_button(label):
