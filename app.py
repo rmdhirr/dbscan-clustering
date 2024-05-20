@@ -94,13 +94,21 @@ def dbscan_clustering(data, eps, min_samples):
 # Streamlit app
 st.title("DBSCAN Clustering App")
 
-# Sidebar menu
+# Sidebar menu as buttons
 st.sidebar.title("Menu")
-menu_options = ["Upload CSV", "Preprocess Data", "DBSCAN Clustering"]
-menu_selection = st.sidebar.radio("Choose an action:", menu_options)
+if st.sidebar.button("Upload CSV"):
+    st.session_state['menu_option'] = "Upload CSV"
+if st.sidebar.button("Preprocess Data"):
+    st.session_state['menu_option'] = "Preprocess Data"
+if st.sidebar.button("DBSCAN Clustering"):
+    st.session_state['menu_option'] = "DBSCAN Clustering"
+
+# Ensure 'menu_option' is initialized
+if 'menu_option' not in st.session_state:
+    st.session_state['menu_option'] = "Upload CSV"
 
 # Main page content
-if menu_selection == "Upload CSV":
+if st.session_state['menu_option'] == "Upload CSV":
     uploaded_file = st.file_uploader("Upload your input CSV file", type=["csv"])
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file, delimiter=';')
@@ -109,7 +117,7 @@ if menu_selection == "Upload CSV":
         st.write("Uploaded Data:")
         st.write(df)
 
-if menu_selection == "Preprocess Data":
+if st.session_state['menu_option'] == "Preprocess Data":
     if 'df' not in st.session_state:
         st.warning("Please upload a CSV file first.")
     else:
@@ -123,7 +131,7 @@ if menu_selection == "Preprocess Data":
         except Exception as e:
             st.error(f"Error during preprocessing: {e}")
 
-if menu_selection == "DBSCAN Clustering":
+if st.session_state['menu_option'] == "DBSCAN Clustering":
     if 'final_df' not in st.session_state:
         st.warning("Please preprocess the data first.")
     else:
