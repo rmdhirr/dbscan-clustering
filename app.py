@@ -85,7 +85,7 @@ def preprocess_data(df):
     df_transformed = transformer.fit_transform(numeric_df)
     df_transformed = pd.DataFrame(df_transformed, columns=numeric_df.columns)
     
-    # Check for any remaining infinite or NaN values in numeric columns
+    # Ensure all values are finite
     if not np.isfinite(df_transformed.values).all():
         raise ValueError("Data contains non-finite values after preprocessing.")
     
@@ -96,6 +96,9 @@ def preprocess_data(df):
 
 # Function to perform DBSCAN clustering
 def dbscan_clustering(data, eps, min_samples):
+    # Ensure input data for DBSCAN is numeric and finite
+    if not np.isfinite(data.values).all():
+        raise ValueError("DBSCAN input data contains non-finite values.")
     db = DBSCAN(eps=eps, min_samples=min_samples).fit(data)
     labels = db.labels_
     
