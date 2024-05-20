@@ -132,10 +132,11 @@ if 'menu_option' not in st.session_state:
 
 # Main page content
 if st.session_state['menu_option'] == "Upload CSV":
-    delimiter = st.selectbox("Select the delimiter", [",", ";", "\t", " "])
+    delimiter = st.selectbox("Select the delimiter", [", (Comma)", "; (Semicolon)", "\\t (Tab)", " (Space)"], format_func=lambda x: x.split(" ")[0])
     uploaded_file = st.file_uploader("Upload your input CSV file", type=["csv"])
     if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file, delimiter=delimiter)
+        delimiter_map = {", (Comma)": ",", "; (Semicolon)": ";", "\\t (Tab)": "\t", " (Space)": " "}
+        df = pd.read_csv(uploaded_file, delimiter=delimiter_map[delimiter])
         df.columns = make_unique(df.columns.tolist())  # Ensure unique column names after reading
         st.session_state['df'] = df
         st.write("Uploaded Data:")
@@ -197,21 +198,12 @@ if st.session_state['menu_option'] == "DBSCAN Clustering":
                 fig, ax = plt.subplots(1, 1, figsize=(20, 12))  # Increased figure width for better layout
                 gdf.plot(ax=ax, markersize=5, column='cluster_labels', cmap='viridis', legend=True)
                 
-                # Distance calculation for label placement
-                coords = np.column_stack((gdf.geometry.x, gdf.geometry.y))
-                distances = euclidean_distances(coords, coords)
-                min_dist = np.percentile(distances[distances > 0], 1)  # Lower percentile if too restrictive
-                
                 # Add regency names, relaxing the distance condition
                 for idx, row in gdf.iterrows():
-                    if distances[idx][distances[idx] > 0].min() > min_dist / 2:  # Reduce min_dist to be less restrictive
-                        ax.text(row.geometry.x, row.geometry.y, row['regency'], fontsize=8, ha='right', va='top', rotation=15)
-                    else:
-                        # Optionally add a marker or different text for skipped points
-                        ax.text(row.geometry.x, row.geometry.y, '*', fontsize=12, color='red')  # Mark points too close to others
+                    ax.text(row.geometry.x, row.geometry.y, row['regency'], fontsize=8, ha='right', va='top', rotation=15)
                 
                 # Add the basemap
-                ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
+                ctx.add_basemap(ax, source=ctx.providers.Stamen.Terrain)
                 ax.set_title('DBSCAN Clustering of PCA-Reduced Data with Regency Labels')
                 ax.set_axis_off()
                 st.pyplot(fig)
