@@ -85,12 +85,12 @@ def preprocess_data(df):
     df_transformed = transformer.fit_transform(numeric_df)
     df_transformed = pd.DataFrame(df_transformed, columns=numeric_df.columns)
     
+    # Check for any remaining infinite or NaN values in numeric columns
+    if not np.isfinite(df_transformed.values).all():
+        raise ValueError("Data contains non-finite values after preprocessing.")
+    
     # Merge the transformed numeric data with non-numeric data and lat/lon data
     final_df = pd.concat([df_transformed, non_numeric_df.reset_index(drop=True), lat_lon_df.reset_index(drop=True)], axis=1)
-    
-    # Ensure all values are finite
-    if not np.isfinite(final_df.values).all():
-        raise ValueError("Data contains non-finite values after preprocessing.")
     
     return final_df, numeric_df.columns
 
