@@ -132,9 +132,10 @@ if 'menu_option' not in st.session_state:
 
 # Main page content
 if st.session_state['menu_option'] == "Upload CSV":
+    delimiter = st.selectbox("Select the delimiter", [",", ";", "\t", " "])
     uploaded_file = st.file_uploader("Upload your input CSV file", type=["csv"])
     if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file, delimiter=';')
+        df = pd.read_csv(uploaded_file, delimiter=delimiter)
         df.columns = make_unique(df.columns.tolist())  # Ensure unique column names after reading
         st.session_state['df'] = df
         st.write("Uploaded Data:")
