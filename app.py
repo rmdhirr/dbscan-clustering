@@ -94,13 +94,36 @@ def dbscan_clustering(data, eps, min_samples):
 # Streamlit app
 st.title("DBSCAN Clustering App")
 
-# Sidebar menu as buttons
+# Sidebar menu as buttons with same size
 st.sidebar.title("Menu")
-if st.sidebar.button("Upload CSV"):
+button_style = """
+    <style>
+    .button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        text-align: center;
+        margin: 5px 0;
+        color: white;
+        background-color: #007BFF;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+    .button:hover {
+        background-color: #0056b3;
+    }
+    </style>
+    """
+
+st.sidebar.markdown(button_style, unsafe_allow_html=True)
+
+if st.sidebar.button("Upload CSV", key='upload_csv'):
     st.session_state['menu_option'] = "Upload CSV"
-if st.sidebar.button("Preprocess Data"):
+if st.sidebar.button("Preprocess Data", key='preprocess_data'):
     st.session_state['menu_option'] = "Preprocess Data"
-if st.sidebar.button("DBSCAN Clustering"):
+if st.sidebar.button("DBSCAN Clustering", key='dbscan_clustering'):
     st.session_state['menu_option'] = "DBSCAN Clustering"
 
 # Ensure 'menu_option' is initialized
