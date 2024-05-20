@@ -66,12 +66,6 @@ def preprocess_data(df):
     st.write("Numeric DataFrame after filling missing values:")
     st.write(numeric_df)
     
-    # Handle infinite values
-    numeric_df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    
-    # Handle remaining NaN values
-    numeric_df = numeric_df.apply(lambda x: x.fillna(x.median()), axis=0)
-    
     # Handle outliers by capping them to the 99th percentile
     for column in numeric_df.columns:
         upper_limit = numeric_df[column].quantile(0.99)
@@ -85,10 +79,6 @@ def preprocess_data(df):
     df_transformed = transformer.fit_transform(numeric_df)
     df_transformed = pd.DataFrame(df_transformed, columns=numeric_df.columns)
     
-    # Ensure all values are finite
-    if not np.isfinite(df_transformed.values).all():
-        raise ValueError("Data contains non-finite values after preprocessing.")
-    
     # Merge the transformed numeric data with non-numeric data and lat/lon data
     final_df = pd.concat([df_transformed, non_numeric_df.reset_index(drop=True), lat_lon_df.reset_index(drop=True)], axis=1)
     
@@ -96,46 +86,21 @@ def preprocess_data(df):
 
 # Function to perform DBSCAN clustering
 def dbscan_clustering(data, eps, min_samples):
-    # Ensure input data for DBSCAN is numeric and finite
-    if not np.isfinite(data.values).all():
-        raise ValueError("DBSCAN input data contains non-finite values.")
     db = DBSCAN(eps=eps, min_samples=min_samples).fit(data)
     labels = db.labels_
     
     return data, labels
 
-# Initialize session state
-if 'page' not in st.session_state:
-    st.session_state['page'] = 'Upload CSV'
-
-# Title for the app
+# Streamlit app
 st.title("DBSCAN Clustering App")
 
-# Sidebar navigation buttons with equal size and centered text
-def sidebar_button(label):
-    st.sidebar.markdown(
-        f"""
-        <style>
-        div.stButton > button:first-child {{
-            width: 100%;
-            height: 50px;
-            text-align: center;
-        }}
-        </style>
-        """, unsafe_allow_html=True)
-    return st.sidebar.button(label)
-
-if sidebar_button('Upload CSV'):
-    st.session_state['page'] = 'Upload CSV'
-if sidebar_button('Preprocess Data'):
-    st.session_state['page'] = 'Preprocess Data'
-if sidebar_button('DBSCAN Clustering'):
-    st.session_state['page'] = 'DBSCAN Clustering'
+# Sidebar menu
+st.sidebar.title("Menu")
+option = st.sidebar.selectbox("Choose an action:", ["Upload CSV", "Preprocess Data", "DBSCAN Clustering"])
 
 # Upload CSV
-if st.session_state['page'] == 'Upload CSV':
-    st.header("Upload CSV")
-    uploaded_file = st.file_uploader("Upload your input CSV file", type=["csv"])
+if option == "Upload CSV":
+    uploaded_file = st.sidebar.file_uploader("Upload your input CSV file", type=["csv"])
     if uploaded_file is not None:
         # Forcing delimiter to semicolon based on provided dataset example
         df = pd.read_csv(uploaded_file, delimiter=';')
@@ -143,15 +108,11 @@ if st.session_state['page'] == 'Upload CSV':
         st.session_state['df'] = df
         st.write("Uploaded Data:")
         st.write(df)
-    if st.button("Proceed to Preprocessing"):
-        st.session_state['page'] = 'Preprocess Data'
-        st.experimental_rerun()
 
 # Preprocess Data
-if st.session_state['page'] == 'Preprocess Data':
-    st.header("Preprocess Data")
+if option == "Preprocess Data":
     if 'df' not in st.session_state:
-        st.warning("Please upload a CSV file first.")
+        st.sidebar.warning("Please upload a CSV file first.")
     else:
         df = st.session_state['df']
         try:
@@ -160,22 +121,18 @@ if st.session_state['page'] == 'Preprocess Data':
             st.session_state['numeric_columns'] = numeric_columns
             st.write("Preprocessed Data:")
             st.write(final_df)
-            if st.button("Proceed to DBSCAN Clustering"):
-                st.session_state['page'] = 'DBSCAN Clustering'
-                st.experimental_rerun()
         except Exception as e:
             st.error(f"Error during preprocessing: {e}")
 
 # DBSCAN Clustering
-if st.session_state['page'] == 'DBSCAN Clustering':
-    st.header("DBSCAN Clustering")
+if option == "DBSCAN Clustering":
     if 'final_df' not in st.session_state:
-        st.warning("Please preprocess the data first.")
+        st.sidebar.warning("Please preprocess the data first.")
     else:
         final_df = st.session_state['final_df']
         numeric_columns = st.session_state['numeric_columns']
-        eps = st.slider("Select epsilon (eps):", 0.1, 5.0, 0.5)
-        min_samples = st.slider("Select minimum samples:", 1, 10, 5)
+        eps = st.sidebar.slider("Select epsilon (eps):", 0.1, 5.0, 0.5)
+        min_samples = st.sidebar.slider("Select minimum samples:", 1, 10, 5)
         try:
             # Apply PCA to reduce dimensions to 2D for clustering
             pca = PCA(n_components=2)
@@ -207,8 +164,8 @@ if st.session_state['page'] == 'DBSCAN Clustering':
                 gdf = gdf.to_crs(epsg=3857)  # Project to Web Mercator for visualization purposes
                 
                 # Plot using geopandas and add a basemap with contextily
-                fig, ax = plt.subplots(1, 1, figsize=(30, 20))  # Increased figure size for better layout
-                gdf.plot(ax=ax, markersize=5, column='cluster_labels', cmap='tab20', legend=True)
+                fig, ax = plt.subplots(1, 1, figsize=(20, 12))  # Increased figure width for better layout
+                gdf.plot(ax=ax, markersize=5, column='cluster_labels', cmap='viridis', legend=True)
                 
                 # Distance calculation for label placement
                 coords = np.column_stack((gdf.geometry.x, gdf.geometry.y))
@@ -224,9 +181,11 @@ if st.session_state['page'] == 'DBSCAN Clustering':
                         ax.text(row.geometry.x, row.geometry.y, '*', fontsize=12, color='red')  # Mark points too close to others
                 
                 # Add the basemap
-                ctx.add_basemap(ax, source=ctx.providers.CartoDB.Voyager)
+                ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron)
                 ax.set_title('DBSCAN Clustering of PCA-Reduced Data with Regency Labels')
                 ax.set_axis_off()
                 st.pyplot(fig)
+            else:
+                st.error("Longitude and Latitude columns are required for the map visualization.")
         except Exception as e:
             st.error(f"Error during DBSCAN clustering: {e}")
