@@ -94,25 +94,38 @@ def dbscan_clustering(data, eps, min_samples):
 # Streamlit app
 st.title("DBSCAN Clustering App")
 
-# Sidebar menu
-st.sidebar.title("Menu")
-option = st.sidebar.selectbox("Choose an action:", ["Upload CSV", "Preprocess Data", "DBSCAN Clustering"])
+# Main menu
+st.header("Menu")
+col1, col2, col3 = st.columns(3)
+
+if col1.button("Upload CSV"):
+    st.session_state.page = "Upload CSV"
+elif col2.button("Preprocess Data"):
+    st.session_state.page = "Preprocess Data"
+elif col3.button("DBSCAN Clustering"):
+    st.session_state.page = "DBSCAN Clustering"
 
 # Upload CSV
-if option == "Upload CSV":
-    uploaded_file = st.sidebar.file_uploader("Upload your input CSV file", type=["csv"])
+if st.session_state.get('page') == "Upload CSV":
+    uploaded_file = st.file_uploader("Upload your input CSV file", type=["csv"])
     if uploaded_file is not None:
-        # Forcing delimiter to semicolon based on provided dataset example
-        df = pd.read_csv(uploaded_file, delimiter=';')
+        # Try reading the CSV with different delimiters
+        delimiters = [',', ';', '\t', '|']
+        for delimiter in delimiters:
+            try:
+                df = pd.read_csv(uploaded_file, delimiter=delimiter)
+                break
+            except pd.errors.ParserError:
+                continue
         df.columns = make_unique(df.columns.tolist())  # Ensure unique column names after reading
         st.session_state['df'] = df
         st.write("Uploaded Data:")
         st.write(df)
 
 # Preprocess Data
-if option == "Preprocess Data":
+if st.session_state.get('page') == "Preprocess Data":
     if 'df' not in st.session_state:
-        st.sidebar.warning("Please upload a CSV file first.")
+        st.warning("Please upload a CSV file first.")
     else:
         df = st.session_state['df']
         try:
@@ -125,14 +138,14 @@ if option == "Preprocess Data":
             st.error(f"Error during preprocessing: {e}")
 
 # DBSCAN Clustering
-if option == "DBSCAN Clustering":
+if st.session_state.get('page') == "DBSCAN Clustering":
     if 'final_df' not in st.session_state:
-        st.sidebar.warning("Please preprocess the data first.")
+        st.warning("Please preprocess the data first.")
     else:
         final_df = st.session_state['final_df']
         numeric_columns = st.session_state['numeric_columns']
-        eps = st.sidebar.slider("Select epsilon (eps):", 0.1, 5.0, 0.5)
-        min_samples = st.sidebar.slider("Select minimum samples:", 1, 10, 5)
+        eps = st.slider("Select epsilon (eps):", 0.1, 5.0, 0.5)
+        min_samples = st.slider("Select minimum samples:", 1, 10, 5)
         try:
             # Apply PCA to reduce dimensions to 2D for clustering
             pca = PCA(n_components=2)
